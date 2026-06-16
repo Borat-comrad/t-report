@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import date
 
@@ -16,6 +18,7 @@ class KpReportItem:
     proposal_deadline: date
     preparation_status: str
     overdue_days: int
+    request_state: str = ""
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,12 @@ class KpAnalysisResult:
 
 def is_empty_status(status: str) -> bool:
     return status.strip() == ""
+
+
+def build_request_state(overdue_days: int) -> str:
+    if overdue_days > 7:
+        return "Критическая просрочка по КП"
+    return "Просрочка по КП 1–7 дней"
 
 
 def analyze_kp_items(items: list[KpItem], report_date: date) -> KpAnalysisResult:
@@ -55,6 +64,7 @@ def analyze_kp_items(items: list[KpItem], report_date: date) -> KpAnalysisResult
             proposal_deadline=item.proposal_deadline,
             preparation_status=item.preparation_status,
             overdue_days=overdue_days,
+            request_state=build_request_state(overdue_days),
         )
 
         if overdue_days > 7:

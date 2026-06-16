@@ -18,19 +18,21 @@ class RawSheets:
 
 def load_excel_workbook(excel_path: Path) -> Workbook:
     if not excel_path.exists():
-        raise ExcelSourceError(f"Excel-файл не найден: {excel_path}")
+        raise ExcelSourceError(f"Excel file was not found: {excel_path}")
 
     try:
         return load_workbook(excel_path)
     except Exception as exc:
-        raise ExcelSourceError(
-            f"Не удалось открыть Excel-файл: {excel_path}"
-        ) from exc
+        raise ExcelSourceError(f"Could not open Excel file: {excel_path}") from exc
 
 
 def get_required_sheet(workbook: Workbook, sheet_name: str) -> Worksheet:
     if sheet_name not in workbook.sheetnames:
-        raise ExcelSourceError(f"Лист не найден в Excel-книге: {sheet_name}")
+        available_sheets = ", ".join(workbook.sheetnames)
+        raise ExcelSourceError(
+            f"Required Excel sheet was not found: {sheet_name}. "
+            f"Available sheets: {available_sheets}"
+        )
 
     return workbook[sheet_name]
 
@@ -38,8 +40,8 @@ def get_required_sheet(workbook: Workbook, sheet_name: str) -> Worksheet:
 def load_required_sheets(excel_path: Path) -> RawSheets:
     workbook = load_excel_workbook(excel_path)
 
-    kp_sheet = get_required_sheet(workbook, "КП")
-    delivery_sheet = get_required_sheet(workbook, "Поставки")
+    kp_sheet = get_required_sheet(workbook, "запросы 2026")
+    delivery_sheet = get_required_sheet(workbook, "заказы 2026")
 
     return RawSheets(
         kp_sheet=kp_sheet,

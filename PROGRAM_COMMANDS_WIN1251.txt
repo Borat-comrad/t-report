@@ -1,0 +1,338 @@
+T-REPORT: КОМАНДЫ ДЛЯ УПРАВЛЕНИЯ ПРОГРАММОЙ НА WINDOWS-СЕРВЕРЕ
+
+Базовое допущение:
+проект лежит в D:\t-report
+
+Если путь другой, замените D:\t-report на фактическую папку проекта.
+
+
+1. ПЕРЕХОД В ПАПКУ ПРОЕКТА
+
+PowerShell:
+
+cd D:\t-report
+
+CMD:
+
+cd /d D:\t-report
+
+
+2. ПРОВЕРКА PYTHON
+
+Проверить Python Launcher:
+
+py --version
+
+Проверить python.exe:
+
+python --version
+
+Найти команду в PowerShell:
+
+Get-Command py
+Get-Command python
+
+Найти команду в CMD:
+
+where py
+where python
+
+
+3. УСТАНОВКА ЗАВИСИМОСТЕЙ
+
+Через py:
+
+py -m pip install openpyxl python-docx python-dotenv
+
+Через python:
+
+python -m pip install openpyxl python-docx python-dotenv
+
+Обновить pip:
+
+py -m pip install --upgrade pip
+
+Проверить установленные пакеты:
+
+py -m pip list
+
+
+4. НАСТРОЙКА .ENV
+
+Открыть .env:
+
+notepad .\.env
+
+Пример содержимого .env:
+
+T_REPORT_SMTP_HOST=smtp.yandex.ru
+T_REPORT_SMTP_PORT=465
+T_REPORT_SMTP_USERNAME=sender@yandex.ru
+T_REPORT_SMTP_PASSWORD=app_password
+T_REPORT_EMAIL_FROM=sender@yandex.ru
+T_REPORT_EMAIL_TO=first@example.com,second@example.com;third@example.com
+T_REPORT_SMTP_SECURITY=ssl
+
+Получателей можно указывать через запятую, точку с запятой или новую строку.
+
+
+5. ПРОВЕРКА ИСХОДНОГО EXCEL-ФАЙЛА
+
+Проверить наличие DS.xlsx:
+
+Test-Path .\DS.xlsx
+
+Посмотреть размер и дату изменения:
+
+Get-Item .\DS.xlsx | Select-Object Name,Length,LastWriteTime
+
+
+6. РУЧНОЙ PREVIEW БЕЗ ОТПРАВКИ
+
+Запустить preview:
+
+py .\report_tool.py --preview
+
+Запустить preview на конкретную дату:
+
+py .\report_tool.py --preview --date 2026-03-30
+
+Сохранить preview в лог:
+
+New-Item -ItemType Directory -Force -Path .\logs
+py .\report_tool.py --preview *> .\logs\preview.log
+
+
+7. СБОРКА EMAIL-ПАКЕТА БЕЗ ОТПРАВКИ
+
+Собрать пакет в output:
+
+py .\report_tool.py --build-email-package --output-dir .\output
+
+Собрать пакет на конкретную дату:
+
+py .\report_tool.py --build-email-package --date 2026-03-30 --output-dir .\output
+
+Посмотреть созданные файлы:
+
+Get-ChildItem .\output
+
+
+8. РУЧНАЯ ОТПРАВКА EMAIL
+
+Отправить на адреса из .env:
+
+py .\report_tool.py --send --output-dir .\output
+
+Отправить на конкретную дату:
+
+py .\report_tool.py --send --date 2026-03-30 --output-dir .\output
+
+Временно указать получателей из команды:
+
+py .\report_tool.py --send --email-to "first@example.com,second@example.com" --output-dir .\output
+
+
+9. РУЧНОЙ ЗАПУСК СЕРВЕРНОГО КОНТУРА
+
+Запустить штатный wrapper:
+
+.\scripts\run_weekly_send.ps1
+
+Запустить wrapper через python вместо py:
+
+.\scripts\run_weekly_send.ps1 -PythonCommand "python"
+
+
+10. ЕДИНЫЙ СКРИПТ ДЕПЛОЯ И ПЛАНИРОВЩИКА
+
+Установить задачу на каждый понедельник 09:00, если DS.xlsx обновляется вручную:
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy_windows_scheduled.ps1 -Mode Install -ProjectDir "D:\t-report" -RunAt "09:00" -CleanOutput
+
+Установить задачу с обновлением DS.xlsx из сетевой папки:
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy_windows_scheduled.ps1 -Mode Install -ProjectDir "D:\t-report" -SourceExcel "\\fileserver\reports\DS.xlsx" -RunAt "09:00" -CleanOutput
+
+Установить задачу с использованием python вместо py:
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy_windows_scheduled.ps1 -Mode Install -ProjectDir "D:\t-report" -SourceExcel "\\fileserver\reports\DS.xlsx" -RunAt "09:00" -CleanOutput -PythonCommand "python"
+
+Ручной тест того же контура:
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy_windows_scheduled.ps1 -Mode Run -ProjectDir "D:\t-report" -SourceExcel "\\fileserver\reports\DS.xlsx" -CleanOutput
+
+Ручной тест без внешнего источника, с локальным DS.xlsx:
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy_windows_scheduled.ps1 -Mode Run -ProjectDir "D:\t-report" -CleanOutput
+
+
+11. УПРАВЛЕНИЕ ЗАДАЧЕЙ В ПЛАНИРОВЩИКЕ WINDOWS
+
+Открыть Планировщик:
+
+taskschd.msc
+
+Проверить наличие задачи:
+
+Get-ScheduledTask -TaskName "T-Report Weekly Send"
+
+Запустить задачу вручную:
+
+Start-ScheduledTask -TaskName "T-Report Weekly Send"
+
+Посмотреть состояние:
+
+Get-ScheduledTask -TaskName "T-Report Weekly Send" | Select-Object TaskName,State
+
+Посмотреть информацию о последнем запуске:
+
+Get-ScheduledTaskInfo -TaskName "T-Report Weekly Send"
+
+Отключить задачу:
+
+Disable-ScheduledTask -TaskName "T-Report Weekly Send"
+
+Включить задачу:
+
+Enable-ScheduledTask -TaskName "T-Report Weekly Send"
+
+Удалить задачу:
+
+Unregister-ScheduledTask -TaskName "T-Report Weekly Send" -Confirm:$false
+
+
+12. ОБНОВЛЕНИЕ EXCEL-ФАЙЛА БЕЗ ИЗМЕНЕНИЯ ПРОЕКТА
+
+Удалить старый DS.xlsx:
+
+Remove-Item .\DS.xlsx -Force -ErrorAction SilentlyContinue
+
+Скопировать новый DS.xlsx из сетевой папки:
+
+Copy-Item "\\fileserver\reports\DS.xlsx" ".\DS.xlsx" -Force
+
+Скачать новый DS.xlsx по HTTP-ссылке:
+
+Invoke-WebRequest "https://example.com/DS.xlsx" -OutFile ".\DS.xlsx"
+
+Проверить, что новый файл появился:
+
+Get-Item .\DS.xlsx | Select-Object Name,Length,LastWriteTime
+
+
+13. ОЧИСТКА OUTPUT И ЛОГОВ
+
+Создать output и logs:
+
+New-Item -ItemType Directory -Force -Path .\output
+New-Item -ItemType Directory -Force -Path .\logs
+
+Очистить output перед новым отчетом:
+
+Remove-Item .\output\* -Force -Recurse -ErrorAction SilentlyContinue
+
+Посмотреть последние файлы output:
+
+Get-ChildItem .\output | Sort-Object LastWriteTime -Descending | Select-Object -First 20
+
+Посмотреть последние логи:
+
+Get-ChildItem .\logs | Sort-Object LastWriteTime -Descending | Select-Object -First 10
+
+Открыть последний лог:
+
+$lastLog = Get-ChildItem .\logs\*.log | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+notepad $lastLog.FullName
+
+Показать последние 80 строк последнего лога:
+
+$lastLog = Get-ChildItem .\logs\*.log | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+Get-Content $lastLog.FullName -Tail 80
+
+Удалить логи старше 30 дней:
+
+Get-ChildItem .\logs\*.log | Where-Object LastWriteTime -lt (Get-Date).AddDays(-30) | Remove-Item
+
+
+14. ДИАГНОСТИКА SMTP
+
+Проверить доступность SMTP SSL 465:
+
+Test-NetConnection smtp.yandex.ru -Port 465
+
+Проверить доступность SMTP STARTTLS 587:
+
+Test-NetConnection smtp.yandex.ru -Port 587
+
+Проверить настройки SMTP:
+
+notepad .\.env
+
+
+15. ТИПОВЫЕ ОШИБКИ И БЫСТРЫЕ РЕШЕНИЯ
+
+Если PowerShell блокирует .ps1:
+
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+Разовый запуск без изменения политики:
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy_windows_scheduled.ps1 -Mode Run -ProjectDir "D:\t-report"
+
+Если py не найден, попробовать python:
+
+python .\report_tool.py --preview
+
+Если python не найден, установить Python и включить опцию Add python.exe to PATH.
+
+Если нет прав на создание задачи, открыть PowerShell от имени администратора.
+
+
+16. CMD-ВАРИАНТЫ
+
+Перейти в проект:
+
+cd /d D:\t-report
+
+Preview:
+
+py report_tool.py --preview
+
+Сборка email-пакета:
+
+py report_tool.py --build-email-package --output-dir output
+
+Отправка email:
+
+py report_tool.py --send --output-dir output
+
+Запуск PowerShell-скрипта из CMD:
+
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\deploy_windows_scheduled.ps1 -Mode Run -ProjectDir "D:\t-report"
+
+
+17. ПОЛНЫЙ ПЕРВИЧНЫЙ ДЕПЛОЙ
+
+cd D:\t-report
+py --version
+py -m pip install openpyxl python-docx python-dotenv
+notepad .\.env
+Test-Path .\DS.xlsx
+py .\report_tool.py --build-email-package --output-dir .\output
+py .\report_tool.py --send --output-dir .\output
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\deploy_windows_scheduled.ps1 -Mode Install -ProjectDir "D:\t-report" -RunAt "09:00" -CleanOutput
+Start-ScheduledTask -TaskName "T-Report Weekly Send"
+Get-ScheduledTaskInfo -TaskName "T-Report Weekly Send"
+
+
+18. ПОЛНЫЙ ЕЖЕНЕДЕЛЬНЫЙ РУЧНОЙ ЗАПУСК
+
+cd D:\t-report
+Remove-Item .\DS.xlsx -Force -ErrorAction SilentlyContinue
+Copy-Item "\\fileserver\reports\DS.xlsx" ".\DS.xlsx" -Force
+Remove-Item .\output\* -Force -Recurse -ErrorAction SilentlyContinue
+py .\report_tool.py --send --output-dir .\output
+Get-ChildItem .\logs | Sort-Object LastWriteTime -Descending | Select-Object -First 5
+Get-ChildItem .\output | Sort-Object LastWriteTime -Descending | Select-Object -First 10
+

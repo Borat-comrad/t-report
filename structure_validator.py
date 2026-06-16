@@ -11,7 +11,7 @@ class StructureValidationError(Exception):
 
 
 KP_REQUIRED_HEADERS = (
-    "№",
+    "№ КП",
     "Дата получения",
     "Производитель",
     "Филиал",
@@ -73,7 +73,8 @@ def build_header_map(sheet: Worksheet) -> SheetHeaderMap:
         if header_name == "":
             continue
 
-        columns[header_name] = column_index
+        if header_name not in columns:
+            columns[header_name] = column_index
 
     return SheetHeaderMap(
         sheet_name=sheet.title,
