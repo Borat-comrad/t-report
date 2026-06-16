@@ -11,3 +11,18 @@ env/
 
 *.log
 DS.xlsx
+
+.env
+.env.*
+
+output/
+source_snapshots/
+tests/tmp_output*/
+
+google-credentials*.json
+service-account*.json
+
+*.zip
+*.xlsx
+!examples/**/*.xlsx
+!docs/**/*.xlsx
