@@ -4,7 +4,7 @@ from typing import Mapping
 
 from data_quality import RowNormalizationSkipped, SourceRowIssue, format_raw_value
 from exel_sourse_reader import RawSheets
-from kp_normalizer import normalize_date_value, normalize_text_value
+from kp_normalizer import normalize_date_value, normalize_identifier_value, normalize_text_value
 from structure_validator import RawHeaderMaps
 
 
@@ -137,7 +137,7 @@ def normalize_delivery_row(
 ) -> NormalizedDeliveryRow:
     return NormalizedDeliveryRow(
         source_row_index=row_index,
-        code=normalize_text_value(get_delivery_code_value(row_values)),
+        code=normalize_identifier_value(get_delivery_code_value(row_values)),
         order_received_date=normalize_date_value_by_header(
             row_values,
             columns,
@@ -145,7 +145,7 @@ def normalize_delivery_row(
             sheet_name,
             row_index,
         ),
-        ro_number=normalize_text_value(
+        ro_number=normalize_identifier_value(
             get_cell_value_by_header(row_values, columns, "номер РО")
         ),
         branch=normalize_text_value(

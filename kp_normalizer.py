@@ -38,6 +38,22 @@ def normalize_text_value(value: object) -> str:
     return str(value).strip()
 
 
+def normalize_identifier_value(value: object) -> str:
+    if value is None:
+        return ""
+
+    if isinstance(value, int):
+        return str(value)
+
+    if isinstance(value, float):
+        if value.is_integer():
+            return str(int(value))
+
+        return f"{value:.15g}"
+
+    return normalize_text_value(value)
+
+
 def normalize_date_value(value: object) -> date | None:
     if value is None:
         return None
@@ -123,7 +139,7 @@ def normalize_kp_row(
 ) -> NormalizedKpRow:
     return NormalizedKpRow(
         source_row_index=row_index,
-        request_number=normalize_text_value(
+        request_number=normalize_identifier_value(
             get_cell_value_by_header(row_values, columns, "№ КП")
         ),
         received_date=normalize_date_value_by_header(
